@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Табличні бази даних</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">▦</span>
+      <div>
+        <h1>Табличні бази даних</h1>
+        <p class="db-line">База: <strong id="db-name">…</strong></p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn" id="btn-new-db" type="button">Нова база</button>
+      <button class="btn" id="btn-open" type="button">Відкрити…</button>
+      <button class="btn primary" id="btn-save" type="button">Зберегти…</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="sidebar" aria-label="Таблиці бази">
+      <div class="sidebar-head">
+        <h2>Таблиці</h2>
+        <button class="btn small primary" id="btn-create-table" type="button">＋ Нова</button>
+      </div>
+      <ul id="table-list" class="table-list"></ul>
+      <p id="no-tables" class="muted" hidden>Таблиць ще немає. Створіть першу.</p>
+    </aside>
+
+    <section class="content" aria-live="polite">
+      <div id="empty-state" class="empty">
+        <p class="empty-title">Оберіть таблицю зліва</p>
+        <p class="muted">або створіть нову кнопкою «＋ Нова».</p>
+      </div>
+
+      <div id="table-view" hidden>
+        <div class="content-head">
+          <div>
+            <h2 id="table-title"></h2>
+            <p id="table-info" class="muted"></p>
+          </div>
+          <div class="content-actions">
+            <button class="btn primary" id="btn-add-row" type="button">＋ Додати рядок</button>
+            <button class="btn" id="btn-diff" type="button">Різниця таблиць…</button>
+            <button class="btn danger" id="btn-drop" type="button">Видалити таблицю</button>
+          </div>
+        </div>
+        <div class="grid-wrap">
+          <table class="grid" id="grid">
+            <thead id="grid-head"></thead>
+            <tbody id="grid-body"></tbody>
+          </table>
+          <p id="no-rows" class="muted pad" hidden>У таблиці ще немає рядків.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+
+  <!-- Створення таблиці -->
+  <dialog id="dlg-create">
+    <form method="dialog" id="form-create" novalidate>
+      <h3>Нова таблиця</h3>
+      <label class="field">Ім'я таблиці
+        <input id="create-name" type="text" autocomplete="off" required>
+      </label>
+      <p class="label-line">Поля</p>
+      <div id="create-fields" class="fields-list"></div>
+      <button class="btn small" id="btn-add-field" type="button">＋ Додати поле</button>
+      <p class="form-error" id="create-error" role="alert"></p>
+      <div class="dlg-actions">
+        <button class="btn" type="button" data-close>Скасувати</button>
+        <button class="btn primary" type="submit">Створити</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Додавання / редагування рядка -->
+  <dialog id="dlg-row">
+    <form method="dialog" id="form-row" novalidate>
+      <h3 id="row-title">Додати рядок</h3>
+      <div id="row-fields"></div>
+      <p class="form-error" id="row-error" role="alert"></p>
+      <div class="dlg-actions">
+        <button class="btn" type="button" data-close>Скасувати</button>
+        <button class="btn primary" type="submit" id="row-ok">Додати</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Різниця таблиць -->
+  <dialog id="dlg-diff">
+    <form method="dialog" id="form-diff" novalidate>
+      <h3>Різниця таблиць</h3>
+      <p class="muted">R = A \ B — нова таблиця з тих рядків A, яких немає в B.
+        Схеми A і B мають збігатися за кількістю та типами полів.</p>
+      <label class="field">Таблиця A
+        <select id="diff-a"></select>
+      </label>
+      <label class="field">Таблиця B
+        <select id="diff-b"></select>
+      </label>
+      <label class="field">Ім'я результату R
+        <input id="diff-r" type="text" autocomplete="off">
+      </label>
+      <p class="form-error" id="diff-error" role="alert"></p>
+      <div class="dlg-actions">
+        <button class="btn" type="button" data-close>Скасувати</button>
+        <button class="btn primary" type="submit">Обчислити</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Збереження / відкриття файлу на сервері -->
+  <dialog id="dlg-file">
+    <form method="dialog" id="form-file" novalidate>
+      <h3 id="file-title">Зберегти базу</h3>
+      <p class="muted" id="file-hint"></p>
+      <label class="field">Ім'я файлу
+        <input id="file-name" type="text" autocomplete="off" list="file-list">
+        <datalist id="file-list"></datalist>
+      </label>
+      <p class="form-error" id="file-error" role="alert"></p>
+      <div class="dlg-actions">
+        <button class="btn" type="button" data-close>Скасувати</button>
+        <button class="btn primary" type="submit" id="file-ok">Зберегти</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="/app.js"></script>
+</body>
+</html>

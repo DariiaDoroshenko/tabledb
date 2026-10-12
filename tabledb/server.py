@@ -20,6 +20,10 @@
 знайдено) або 500. Збереження доступне лише в теці сервера (data_dir): клієнт
 передає ім'я файлу, а не шлях.
 
+Веб-інтерфейс (етап 3): ті самі адреси без префікса /api віддають статичні файли з
+теки web/ — «/» (index.html), /style.css, /app.js. Список файлів фіксований, тому
+вийти за межі теки web/ неможливо.
+
 Автентифікації немає: за замовчуванням сервер слухає лише 127.0.0.1.
 """
 from __future__ import annotations
@@ -35,6 +39,14 @@ from .errors import DbError, NotFoundError, ValidationError
 from .service import LocalBackend
 
 MAX_BODY = 5 * 1024 * 1024
+WEB_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "web")
+# Єдині файли, які віддаються як статичні: адреса -> (ім'я файлу, Content-Type).
+STATIC_FILES = {
+    "/": ("index.html", "text/html; charset=utf-8"),
+    "/index.html": ("index.html", "text/html; charset=utf-8"),
+    "/style.css": ("style.css", "text/css; charset=utf-8"),
+    "/app.js": ("app.js", "text/javascript; charset=utf-8"),
+}
 _FILE_RE = re.compile(r"[\w\-. ()]+")
 
 
@@ -130,7 +142,30 @@ class _Handler(BaseHTTPRequestHandler):
             self.server.log(f"ПОМИЛКА: {exc!r}")
             self._send(500, {"error": "внутрішня помилка сервера"})
 
+    def _send_static(self, path: str) -> bool:
+        """Віддає файл веб-інтерфейсу; повертає False, якщо адреса не статична."""
+        entry = STATIC_FILES.get(path)
+        if entry is None:
+            return False
+        filename, content_type = entry
+        try:
+            with open(os.path.join(WEB_DIR, filename), "rb") as f:
+                body = f.read()
+        except OSError:
+            self._send(404, {"error": "файл веб-інтерфейсу не знайдено"})
+            return True
+        self.send_response(200)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.end_headers()
+        self.wfile.write(body)
+        return True
+
     def do_GET(self):
+        if self._send_static(urlsplit(self.path).path):
+            return
         self._handle("GET")
 
     def do_POST(self):
@@ -186,6 +221,7 @@ def serve(host: str, port: int, data_dir: str) -> None:
     """Запускає сервер у поточному потоці до Ctrl+C."""
     server = DbServer((host, port), data_dir, log=print)
     print(f"Сервер запущено: http://{host}:{server.port}  (теку даних: {server.data_dir})")
+    print(f"Веб-інтерфейс: відкрийте http://{host}:{server.port}/ у браузері")
     print("Зупинити: Ctrl+C")
     try:
         server.serve_forever()
